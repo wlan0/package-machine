@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -e
+
+cd $(dirname $0)/..
+BASEDIR=$(pwd)
+mkdir -p $BASEDIR/build
+
+function download_binary_unzip() {
+    DRIVER_BINARY_NAME=$1
+    DRIVER_MD5=$2
+    DRIVER_DOWNLOAD_URL=$3
+
+    if [[ $(curl -sSL $DRIVER_DOWNLOAD_URL | tee $DRIVER_BINARY_NAME | openssl md5 | sed 's/^.* //') != $DRIVER_MD5 ]]; then
+        echo 'md5 checksum is wrong for '$DRIVER_BINARY_NAME
+        exit 1
+    fi
+
+    unzip -o $DRIVER_BINARY_NAME -d $BASEDIR/build/
+
+    rm -rf $DRIVER_BINARY_NAME
+}
+
+download_binary_unzip 'packet-driver.zip' '0575e66da900dc5d4b5d4774bec00764' 'https://github.com/packethost/docker-machine-driver-packet/releases/download/v0.0.2/docker-machine-driver-packet_linux-amd64.zip' 
+download_binary_unzip 'docker-machine.zip' '4e765b5abac3cb58280514c723536133' 'https://github.com/docker/machine/releases/download/v0.5.1/docker-machine_linux-amd64.zip'
+
+mkdir -p $BASEDIR/dist/artifacts
+
+cd $BASEDIR/build
+tar -cvzf $BASEDIR/dist/artifacts/docker-machine.tar.gz *
